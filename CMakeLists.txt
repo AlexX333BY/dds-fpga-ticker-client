@@ -7,7 +7,16 @@ find_package(wxWidgets REQUIRED COMPONENTS
 )
 include(${wxWidgets_USE_FILE})
 
-add_executable(dds_fpga_ticker_client main.cpp)
+set(HEADERS
+    fpga_sender.h
+)
+
+set(SOURCES
+    main.cpp
+    fpga_sender.cpp
+)
+
+add_executable(dds_fpga_ticker_client ${HEADERS} ${SOURCES})
 target_link_libraries(dds_fpga_ticker_client
     ${wxWidgets_LIBRARIES}
 )
