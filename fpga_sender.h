@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <memory>
 #include <vector>
+#include <chrono>
 
 namespace fpga_ticker_client {
     class fpga_sender {
@@ -14,7 +15,7 @@ namespace fpga_ticker_client {
         explicit fpga_sender(const std::string& fpga_device_name);
 
         bool is_opened() const;
-        void send(const std::string& text);
+        void send(const std::string& text, const std::chrono::system_clock::duration& ticker_period);
 
     private:
         std::unique_ptr<std::vector<std::uint8_t>> transform_text(const std::string& text) const;

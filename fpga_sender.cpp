@@ -1,5 +1,6 @@
 #include "fpga_sender.h"
 #include <stdexcept>
+#include <thread>
 
 using namespace fpga_ticker_client;
 
@@ -12,7 +13,7 @@ bool fpga_sender::is_opened() const
     return fpga_device_stream.good();
 }
 
-void fpga_sender::send(const std::string& text)
+void fpga_sender::send(const std::string& text, const std::chrono::system_clock::duration& ticker_period)
 {
     if (!is_opened()) {
         throw std::logic_error("FPGA file was not opened");
@@ -21,6 +22,7 @@ void fpga_sender::send(const std::string& text)
     const std::unique_ptr<std::vector<std::uint8_t>> seven_segment_characters = transform_text(text);
     for (const uint8_t symbol : *seven_segment_characters) {
         fpga_device_stream << symbol;
+        std::this_thread::sleep_for(ticker_period);
     }
     fpga_device_stream.flush();
 }
