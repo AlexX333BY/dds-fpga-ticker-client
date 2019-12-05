@@ -1,16 +1,16 @@
 #include "fpga_sender.h"
 #include <stdexcept>
-#include <thread>
+#include <mutex>
 
 using namespace fpga_ticker_client;
 
-fpga_sender::fpga_sender(const std::string &fpga_device_name)
-    : fpga_device_stream("/dev/" + fpga_device_name, std::ofstream::out | std::ofstream::binary)
+fpga_sender::fpga_sender(const std::string &fpga_device_name) : should_send(false), send_cv(),
+    fpga_device_stream("/dev/" + fpga_device_name, std::ofstream::out | std::ofstream::binary)
 { }
 
 bool fpga_sender::is_opened() const
 {
-    return fpga_device_stream.good();
+    return (bool)fpga_device_stream;
 }
 
 void fpga_sender::send(const std::string& text, const std::chrono::system_clock::duration& ticker_period)
@@ -19,15 +19,22 @@ void fpga_sender::send(const std::string& text, const std::chrono::system_clock:
         throw std::logic_error("FPGA file was not opened");
     }
 
-    const std::unique_ptr<std::vector<std::uint8_t>> seven_segment_characters = transform_text(text);
-    for (const uint8_t symbol : *seven_segment_characters) {
-        fpga_device_stream << symbol;
-        std::this_thread::sleep_for(ticker_period);
+    const std::vector<std::uint8_t> seven_segment_characters = transform_text(text);
+    size_t current_character = 0;
+    std::mutex send_mx;
+    should_send = true;
+    while (should_send) {
+        fpga_device_stream << seven_segment_characters[current_character];
+        fpga_device_stream.flush();
+        {
+            std::unique_lock<std::mutex> lock(send_mx);
+            send_cv.wait_for(lock, ticker_period);
+        }
+        current_character = (current_character + 1) % seven_segment_characters.size();
     }
-    fpga_device_stream.flush();
 }
 
-std::unique_ptr<std::vector<std::uint8_t>> fpga_sender::transform_text(const std::string &text) const
+std::vector<std::uint8_t> fpga_sender::transform_text(const std::string &text) const
 {
     /*
      * 7-segment register segments numbers:
@@ -85,16 +92,28 @@ std::unique_ptr<std::vector<std::uint8_t>> fpga_sender::transform_text(const std
             { ' ', { generate_seven_segment_symbol({ }) } }
     };
 
-    auto result = std::make_unique<std::vector<std::uint8_t>>();
+    std::vector<std::uint8_t> result;
     for (const std::string::value_type text_character : text) {
         try {
             const std::vector<std::uint8_t>& seven_segment_symbols = seven_segment_characters.at(std::tolower(text_character));
             for (const uint8_t symbol : seven_segment_symbols) {
-                result->push_back(symbol);
+                result.push_back(symbol);
             }
         } catch (const std::out_of_range&) {
             throw std::runtime_error(std::string("Symbol ") + text_character + " is not supported");
         }
     }
+    result.shrink_to_fit();
     return result;
+}
+
+void fpga_sender::stop()
+{
+    should_send = false;
+    send_cv.notify_all();
+}
+
+fpga_sender::~fpga_sender()
+{
+    stop();
 }
