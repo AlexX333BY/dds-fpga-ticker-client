@@ -12,6 +12,7 @@ set(HEADERS
     fpga_ticker_client_wx_app.h
     fpga_ticker_client_wx_frame.h
     send_event.h
+    serial_device.h
 )
 
 set(SOURCES
@@ -20,6 +21,7 @@ set(SOURCES
     fpga_ticker_client_wx_app.cpp
     fpga_ticker_client_wx_frame.cpp
     send_event.cpp
+    serial_device.cpp
 )
 
 add_executable(dds_fpga_ticker_client ${HEADERS} ${SOURCES})
