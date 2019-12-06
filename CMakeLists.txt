@@ -24,7 +24,11 @@ set(SOURCES
     serial_device.cpp
 )
 
-add_executable(dds_fpga_ticker_client ${HEADERS} ${SOURCES})
+if (WIN32)
+    add_executable(dds_fpga_ticker_client WIN32 ${HEADERS} ${SOURCES})
+else()
+    add_executable(dds_fpga_ticker_client ${HEADERS} ${SOURCES})
+endif()
 target_link_libraries(dds_fpga_ticker_client
     ${wxWidgets_LIBRARIES}
 )

@@ -5,6 +5,10 @@
 #include <string>
 #include <cstdint>
 
+#if defined (_WIN32) || defined(_WIN64)
+#include <Windows.h>
+#endif
+
 namespace fpga_ticker_client {
     class serial_device {
     public:
@@ -17,7 +21,8 @@ namespace fpga_ticker_client {
     private:
 #ifdef __unix__
         int device;
-#elif defined _WIN32 || _WIN64
+#elif defined (_WIN32) || defined(_WIN64)
+        HANDLE device;
 #endif
     };
 }

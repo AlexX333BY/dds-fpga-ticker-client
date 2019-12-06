@@ -1,4 +1,5 @@
 #include "serial_device.h"
+#include <stdexcept>
 
 using namespace fpga_ticker_client;
 
@@ -99,5 +100,58 @@ void serial_device::write_byte(const uint8_t byte) const
     }
 }
 
-#elif defined _WIN32 || _WIN64
+#elif defined (_WIN32) || defined(_WIN64)
+serial_device::serial_device(const std::string& path, const uint32_t speed) : device(INVALID_HANDLE_VALUE)
+{
+
+    device = CreateFileA(path.c_str(), GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
+    if (device != INVALID_HANDLE_VALUE) {
+        DCB comm_state;
+        if (GetCommState(device, &comm_state) == TRUE) {
+            comm_state.BaudRate = speed;
+            comm_state.ByteSize = sizeof(uint8_t) * 8;
+            comm_state.DCBlength = sizeof(comm_state);
+            comm_state.fBinary = TRUE;
+            if (SetCommState(device, &comm_state) == FALSE) {
+                CloseHandle(device);
+                device = INVALID_HANDLE_VALUE;
+            }
+        } else {
+            CloseHandle(device);
+            device = INVALID_HANDLE_VALUE;
+        }
+    }
+}
+
+serial_device::~serial_device()
+{
+    if (device != INVALID_HANDLE_VALUE) {
+        CloseHandle(device);
+    }
+}
+
+bool serial_device::is_opened() const
+{
+    return device != INVALID_HANDLE_VALUE;
+}
+
+void serial_device::write_byte(const uint8_t byte) const
+{
+    if (!is_opened()) {
+        throw std::logic_error("Device is not opened");
+    }
+
+    BOOL write_result;
+    DWORD write_count;
+    do {
+        write_result = WriteFile(device, &byte, sizeof(byte), &write_count, NULL);
+    } while ((write_result == TRUE) && (write_count != sizeof(byte)));
+
+    if (write_result == TRUE) {
+        FlushFileBuffers(device);
+    } else {
+        throw std::runtime_error("Error writing data to device: " + std::to_string(GetLastError()));
+    }
+}
+
 #endif
