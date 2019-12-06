@@ -34,12 +34,14 @@ std::vector<std::uint8_t> fpga_sender::transform_text(const std::string &text) c
     /*
      * 7-segment register segments numbers:
      *
-     *    _3_
-     *   |   |
-     * 4 |_6_| 2
-     *   |   |
-     * 5 |___| 1
-     *     0
+     * Segment encoding
+     *      0
+     *     ---
+     *  5 |   | 1
+     *     ---   <- 6
+     *  4 |   | 2
+     *     ---
+     *      3
      */
 
     const auto generate_seven_segment_symbol = [](const std::vector<uint8_t>& segments) {
@@ -51,39 +53,39 @@ std::vector<std::uint8_t> fpga_sender::transform_text(const std::string &text) c
         return symbol;
     };
     const std::unordered_map<std::string::value_type, std::vector<uint8_t>> seven_segment_characters = {
-            { 'a', { generate_seven_segment_symbol({ 1, 2, 3, 4, 5, 6 }) } },
-            { 'b', { generate_seven_segment_symbol({ 0, 1, 4, 5, 6 }) } },
+            { 'a', { generate_seven_segment_symbol({ 0, 1, 2, 4, 5, 6 }) } },
+            { 'b', { generate_seven_segment_symbol({ 2, 3, 4, 5 }) } },
             { 'c', { generate_seven_segment_symbol({ 0, 3, 4, 5 }) } },
-            { 'd', { generate_seven_segment_symbol({ 0, 1, 2, 5, 6 }) } },
+            { 'd', { generate_seven_segment_symbol({ 1, 2, 3, 4, 6 }) } },
             { 'e', { generate_seven_segment_symbol({ 0, 3, 4, 5, 6 }) } },
-            { 'f', { generate_seven_segment_symbol({ 2, 3, 4, 5, 6 }) } },
-            { 'g', { generate_seven_segment_symbol({ 0, 1, 3, 4, 5, 6 }) } },
+            { 'f', { generate_seven_segment_symbol({ 0, 4, 5, 6 }) } },
+            { 'g', { generate_seven_segment_symbol({ 0, 2, 3, 4, 5, 6 }) } },
             { 'h', { generate_seven_segment_symbol({ 1, 2, 4, 5, 6 }) } },
             { 'i', { generate_seven_segment_symbol({ 1, 2 }) } },
-            { 'j', { generate_seven_segment_symbol({ 0, 1, 2 }) } },
-            { 'k', { generate_seven_segment_symbol({ 1, 2, 4, 5, 6 }), generate_seven_segment_symbol({ 0,3 }) } },
-            { 'l', { generate_seven_segment_symbol({ 0, 4, 5 }) } },
-            { 'm', { generate_seven_segment_symbol({ 1, 2, 3, 4, 5 }), generate_seven_segment_symbol({ 1, 2, 3 }) } },
-            { 'n', { generate_seven_segment_symbol({ 1, 5, 6 }) } },
+            { 'j', { generate_seven_segment_symbol({ 1, 2, 3 }) } },
+            { 'k', { generate_seven_segment_symbol({ 1, 2, 4, 5, 6 }), generate_seven_segment_symbol({ 0, 3 }) } },
+            { 'l', { generate_seven_segment_symbol({ 3, 4, 5 }) } },
+            { 'm', { generate_seven_segment_symbol({ 0, 1, 2, 4, 5 }), generate_seven_segment_symbol({ 0, 1, 2 }) } },
+            { 'n', { generate_seven_segment_symbol({ 2, 4, 6 }) } },
             { 'o', { generate_seven_segment_symbol({ 0, 1, 2, 3, 4, 5 }) } },
-            { 'p', { generate_seven_segment_symbol({ 2, 3, 4, 5, 6 }) } },
-            { 'q', { generate_seven_segment_symbol({ 1, 2, 3, 4, 6 }) } },
-            { 'r', { generate_seven_segment_symbol({ 5, 6 }) } },
-            { 's', { generate_seven_segment_symbol({ 0, 1, 3, 4, 6 }) } },
-            { 't', { generate_seven_segment_symbol({ 1, 2, 3 }), generate_seven_segment_symbol({ 3 }) } },
-            { 'u', { generate_seven_segment_symbol({ 0, 1, 2, 4, 5 }) } },
-            { 'w', { generate_seven_segment_symbol({ 0, 1, 4, 5 }), generate_seven_segment_symbol({ 0, 1, 2 }) } },
+            { 'p', { generate_seven_segment_symbol({ 0, 1, 4, 5, 6 }) } },
+            { 'q', { generate_seven_segment_symbol({ 0, 1, 2, 5, 6 }) } },
+            { 'r', { generate_seven_segment_symbol({ 4, 6 }) } },
+            { 's', { generate_seven_segment_symbol({ 0, 2, 3, 5, 6 }) } },
+            { 't', { generate_seven_segment_symbol({ 0, 1, 2 }), generate_seven_segment_symbol({ 0 }) } },
+            { 'u', { generate_seven_segment_symbol({ 1, 2, 3, 4, 5 }) } },
+            { 'w', { generate_seven_segment_symbol({ 1, 2, 3, 4, 5 }), generate_seven_segment_symbol({ 1, 2, 3 }) } },
             { 'x', { generate_seven_segment_symbol({ 0, 1, 2, 3 }), generate_seven_segment_symbol({ 0, 3 }) } },
             { '0', { generate_seven_segment_symbol({ 0, 1, 2, 3, 4, 5 }) } },
             { '1', { generate_seven_segment_symbol({ 1, 2 }) } },
-            { '2', { generate_seven_segment_symbol({ 0, 2, 3, 5, 6 }) } },
+            { '2', { generate_seven_segment_symbol({ 0, 1, 3, 4, 6 }) } },
             { '3', { generate_seven_segment_symbol({ 0, 1, 2, 3, 6 }) } },
-            { '4', { generate_seven_segment_symbol({ 1, 2, 4, 6 }) } },
-            { '5', { generate_seven_segment_symbol({ 0, 1, 3, 4, 6 }) } },
-            { '6', { generate_seven_segment_symbol({ 0, 1, 3, 4, 5, 6 }) } },
-            { '7', { generate_seven_segment_symbol({ 1, 2, 3 }) } },
+            { '4', { generate_seven_segment_symbol({ 1, 2, 5, 6 }) } },
+            { '5', { generate_seven_segment_symbol({ 0, 2, 3, 5, 6 }) } },
+            { '6', { generate_seven_segment_symbol({ 0, 2, 3, 4, 5, 6 }) } },
+            { '7', { generate_seven_segment_symbol({ 0, 1, 2 }) } },
             { '8', { generate_seven_segment_symbol({ 0, 1, 2, 3, 4, 5, 6 }) } },
-            { '9', { generate_seven_segment_symbol({ 0, 1, 2, 3, 4, 6 }) } },
+            { '9', { generate_seven_segment_symbol({ 0, 1, 2, 3, 5, 6 }) } },
             { ' ', { generate_seven_segment_symbol({ }) } }
     };
 
