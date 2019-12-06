@@ -26,11 +26,13 @@ namespace fpga_ticker_client {
         void on_device_open_failure(send_event& event);
         void on_data_send_error(send_event& event);
         void on_send_stop(send_event& event);
-        void sending_routine(const std::string& device_name, const std::string& text, const std::chrono::milliseconds& period);
+        void sending_routine(const std::shared_ptr<serial_device>& fpga_device,
+                const std::string& text, const std::chrono::milliseconds& period);
         void enable_inputs(const bool enable = true);
+        void stop_sending();
 
         wxPanel* panel;
-        wxTextCtrl* device_input, * text_input, * period_input;
+        wxTextCtrl* device_input, * text_input, * period_input, * speed_input;
         wxButton* start_button, * stop_button;
         std::unique_ptr<std::thread> sending_thread;
         std::unique_ptr<fpga_sender> sender;

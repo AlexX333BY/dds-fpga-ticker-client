@@ -3,21 +3,18 @@
 
 
 #include <string>
-#include <fstream>
-#include <unordered_map>
 #include <memory>
 #include <vector>
 #include <chrono>
 #include <atomic>
 #include <condition_variable>
+#include "serial_device.h"
 
 namespace fpga_ticker_client {
     class fpga_sender {
     public:
-        explicit fpga_sender(const std::string& fpga_device_name);
-        ~fpga_sender();
+        explicit fpga_sender(const std::shared_ptr<serial_device>& fpga_device);
 
-        bool is_opened() const;
         void send(const std::string& text, const std::chrono::system_clock::duration& ticker_period);
         void stop();
 
@@ -25,7 +22,7 @@ namespace fpga_ticker_client {
         std::vector<std::uint8_t> transform_text(const std::string& text) const;
         std::atomic_bool should_send;
         std::condition_variable send_cv;
-        std::ofstream fpga_device_stream;
+        const std::shared_ptr<serial_device> fpga_device;
     };
 }
 

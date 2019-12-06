@@ -11,18 +11,21 @@ fpga_ticker_client_wx_frame::fpga_ticker_client_wx_frame()
 
     panel = new wxPanel(this);
 
-    auto input_sizer = new wxFlexGridSizer(3, 2, gap, gap);
+    auto input_sizer = new wxFlexGridSizer(4, 2, gap, gap);
     input_sizer->AddGrowableCol(1, 1);
 
     device_input = new wxTextCtrl(panel, wxID_ANY);
     text_input = new wxTextCtrl(panel, wxID_ANY);
     period_input = new wxTextCtrl(panel, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,
         wxIntegerValidator<uint32_t>());
+    speed_input = new wxTextCtrl(panel, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,
+        wxIntegerValidator<uint32_t>());
 
     const std::vector<std::pair<wxString, wxTextCtrl*>> inputs = {
-        { "FPGA device name", device_input },
+        { "FPGA device path", device_input },
         { "Text to send", text_input },
-        { "Period for each character", period_input }
+        { "Period for each character", period_input },
+        { "Port speed", speed_input }
     };
 
     for (size_t input_no = 0; input_no < inputs.size(); ++input_no) {
@@ -58,6 +61,7 @@ void fpga_ticker_client_wx_frame::enable_inputs(const bool enable)
     device_input->Enable(enable);
     text_input->Enable(enable);
     period_input->Enable(enable);
+    speed_input->Enable(enable);
     start_button->Enable(enable);
     stop_button->Enable(!enable);
 }
@@ -67,11 +71,19 @@ void fpga_ticker_client_wx_frame::on_start_sending(wxCommandEvent &event)
     if (event.GetId() == start_button_id) {
         if (panel->Validate()) {
             enable_inputs(false);
-            unsigned long period;
+            unsigned long period, speed;
             period_input->GetValue().ToULong(&period, 10);
-            sending_thread = std::make_unique<std::thread>(&fpga_ticker_client_wx_frame::sending_routine, this,
-                device_input->GetValue().ToStdString(), text_input->GetValue().ToStdString(),
-                std::chrono::milliseconds(period));
+            speed_input->GetValue().ToULong(&speed, 10);
+
+            const auto device = std::make_shared<serial_device>(device_input->GetValue().ToStdString(), speed);
+            if (device) {
+                sending_thread = std::make_unique<std::thread>(&fpga_ticker_client_wx_frame::sending_routine, this,
+                    device, text_input->GetValue().ToStdString(), std::chrono::milliseconds(period));
+            } else {
+                const auto open_failed_event = new send_event("", this->GetId(), DEVICE_OPEN_ERROR_EVENT);
+                open_failed_event->SetEventObject(this);
+                QueueEvent(open_failed_event);
+            }
         }
     } else {
         event.Skip();
@@ -87,12 +99,12 @@ void fpga_ticker_client_wx_frame::on_stop_sending(wxCommandEvent &event)
     }
 }
 
-void fpga_ticker_client_wx_frame::sending_routine(const std::string& device_name, const std::string& text,
-    const std::chrono::milliseconds& period)
+void fpga_ticker_client_wx_frame::sending_routine(const std::shared_ptr<serial_device>& fpga_device,
+    const std::string& text, const std::chrono::milliseconds& period)
 {
     send_event* event;
-    sender = std::make_unique<fpga_sender>(device_name);
-    if (sender->is_opened()) {
+    if (fpga_device->is_opened()) {
+        sender = std::make_unique<fpga_sender>(fpga_device);
         try {
             sender->send(text, period);
             event = new send_event("", this->GetId(), SEND_STOPPED_EVENT);
@@ -110,9 +122,7 @@ void fpga_ticker_client_wx_frame::on_device_open_failure(send_event& event)
 {
     const std::string& message = event.get_message();
     wxMessageBox("Error opening device" + (!message.empty() ? ": " + message : ""), "Error", wxICON_ERROR);
-    sending_thread->join();
-    sending_thread.reset();
-    sender.reset();
+    stop_sending();
     enable_inputs(true);
 }
 
@@ -120,17 +130,13 @@ void fpga_ticker_client_wx_frame::on_data_send_error(send_event& event)
 {
     const std::string& message = event.get_message();
     wxMessageBox("Error sending data to device" + (!message.empty() ? ": " + message : ""), "Error", wxICON_ERROR);
-    sending_thread->join();
-    sending_thread.reset();
-    sender.reset();
+    stop_sending();
     enable_inputs(true);
 }
 
 void fpga_ticker_client_wx_frame::on_send_stop(send_event&)
 {
-    sending_thread->join();
-    sending_thread.reset();
-    sender.reset();
+    stop_sending();
     enable_inputs(true);
 }
 
@@ -141,5 +147,19 @@ fpga_ticker_client_wx_frame::~fpga_ticker_client_wx_frame()
     }
     if (sending_thread && sending_thread->joinable()) {
         sending_thread->join();
+    }
+}
+
+void fpga_ticker_client_wx_frame::stop_sending()
+{
+    if (sender) {
+        sender->stop();
+        sender.reset();
+    }
+    if (sending_thread) {
+        if (sending_thread->joinable()) {
+            sending_thread->join();
+        }
+        sending_thread.reset();
     }
 }

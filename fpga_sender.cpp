@@ -1,22 +1,18 @@
 #include "fpga_sender.h"
 #include <stdexcept>
 #include <mutex>
+#include <unordered_map>
 
 using namespace fpga_ticker_client;
 
-fpga_sender::fpga_sender(const std::string &fpga_device_name) : should_send(false), send_cv(),
-    fpga_device_stream("/dev/" + fpga_device_name, std::ofstream::out | std::ofstream::binary)
+fpga_sender::fpga_sender(const std::shared_ptr<serial_device>& fpga_device)
+    : fpga_device(fpga_device), should_send(false)
 { }
-
-bool fpga_sender::is_opened() const
-{
-    return (bool)fpga_device_stream;
-}
 
 void fpga_sender::send(const std::string& text, const std::chrono::system_clock::duration& ticker_period)
 {
-    if (!is_opened()) {
-        throw std::logic_error("FPGA file was not opened");
+    if (!fpga_device->is_opened()) {
+        throw std::logic_error("FPGA device was not opened");
     }
 
     const std::vector<std::uint8_t> seven_segment_characters = transform_text(text);
@@ -24,8 +20,7 @@ void fpga_sender::send(const std::string& text, const std::chrono::system_clock:
     std::mutex send_mx;
     should_send = true;
     while (should_send) {
-        fpga_device_stream << seven_segment_characters[current_character];
-        fpga_device_stream.flush();
+        fpga_device->write_byte(seven_segment_characters[current_character]);
         {
             std::unique_lock<std::mutex> lock(send_mx);
             send_cv.wait_for(lock, ticker_period);
@@ -111,9 +106,4 @@ void fpga_sender::stop()
 {
     should_send = false;
     send_cv.notify_all();
-}
-
-fpga_sender::~fpga_sender()
-{
-    stop();
 }
