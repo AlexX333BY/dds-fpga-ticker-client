@@ -32,8 +32,6 @@ void fpga_sender::send(const std::string& text, const std::chrono::system_clock:
 std::vector<std::uint8_t> fpga_sender::transform_text(const std::string &text) const
 {
     /*
-     * 7-segment register segments numbers:
-     *
      * Segment encoding
      *      0
      *     ---
@@ -54,7 +52,7 @@ std::vector<std::uint8_t> fpga_sender::transform_text(const std::string &text) c
     };
     const std::unordered_map<std::string::value_type, std::vector<uint8_t>> seven_segment_characters = {
             { 'a', { generate_seven_segment_symbol({ 0, 1, 2, 4, 5, 6 }) } },
-            { 'b', { generate_seven_segment_symbol({ 2, 3, 4, 5 }) } },
+            { 'b', { generate_seven_segment_symbol({ 2, 3, 4, 5, 6 }) } },
             { 'c', { generate_seven_segment_symbol({ 0, 3, 4, 5 }) } },
             { 'd', { generate_seven_segment_symbol({ 1, 2, 3, 4, 6 }) } },
             { 'e', { generate_seven_segment_symbol({ 0, 3, 4, 5, 6 }) } },
@@ -63,19 +61,19 @@ std::vector<std::uint8_t> fpga_sender::transform_text(const std::string &text) c
             { 'h', { generate_seven_segment_symbol({ 1, 2, 4, 5, 6 }) } },
             { 'i', { generate_seven_segment_symbol({ 1, 2 }) } },
             { 'j', { generate_seven_segment_symbol({ 1, 2, 3 }) } },
-            { 'k', { generate_seven_segment_symbol({ 1, 2, 4, 5, 6 }), generate_seven_segment_symbol({ 0, 3 }) } },
+            { 'k', { generate_seven_segment_symbol({ 1, 2, 4, 5, 6 }), generate_seven_segment_symbol({ 0, 3, 4, 5 }) } },
             { 'l', { generate_seven_segment_symbol({ 3, 4, 5 }) } },
-            { 'm', { generate_seven_segment_symbol({ 0, 1, 2, 4, 5 }), generate_seven_segment_symbol({ 0, 1, 2 }) } },
+            { 'm', { generate_seven_segment_symbol({ 0, 1, 2, 4, 5 }), generate_seven_segment_symbol({ 0, 1, 2, 4, 5 }) } },
             { 'n', { generate_seven_segment_symbol({ 2, 4, 6 }) } },
             { 'o', { generate_seven_segment_symbol({ 0, 1, 2, 3, 4, 5 }) } },
             { 'p', { generate_seven_segment_symbol({ 0, 1, 4, 5, 6 }) } },
             { 'q', { generate_seven_segment_symbol({ 0, 1, 2, 5, 6 }) } },
             { 'r', { generate_seven_segment_symbol({ 4, 6 }) } },
             { 's', { generate_seven_segment_symbol({ 0, 2, 3, 5, 6 }) } },
-            { 't', { generate_seven_segment_symbol({ 0, 1, 2 }), generate_seven_segment_symbol({ 0 }) } },
+            { 't', { generate_seven_segment_symbol({ 0, 1, 2 }), generate_seven_segment_symbol({ 0, 4, 5 }) } },
             { 'u', { generate_seven_segment_symbol({ 1, 2, 3, 4, 5 }) } },
-            { 'w', { generate_seven_segment_symbol({ 1, 2, 3, 4, 5 }), generate_seven_segment_symbol({ 1, 2, 3 }) } },
-            { 'x', { generate_seven_segment_symbol({ 0, 1, 2, 3 }), generate_seven_segment_symbol({ 0, 3 }) } },
+            { 'w', { generate_seven_segment_symbol({ 1, 2, 3, 4, 5 }), generate_seven_segment_symbol({ 1, 2, 3, 4, 5 }) } },
+            { 'x', { generate_seven_segment_symbol({ 0, 1, 2, 3 }), generate_seven_segment_symbol({ 0, 3, 4, 5 }) } },
             { '0', { generate_seven_segment_symbol({ 0, 1, 2, 3, 4, 5 }) } },
             { '1', { generate_seven_segment_symbol({ 1, 2 }) } },
             { '2', { generate_seven_segment_symbol({ 0, 1, 3, 4, 6 }) } },
