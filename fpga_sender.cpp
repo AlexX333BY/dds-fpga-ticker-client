@@ -45,10 +45,10 @@ std::vector<std::uint8_t> fpga_sender::transform_text(const std::string &text) c
      */
 
     const auto generate_seven_segment_symbol = [](const std::vector<uint8_t>& segments) {
-        uint8_t symbol = 0;
+        uint8_t symbol = 0xFF;
         for (const uint8_t segment : segments)
         {
-            symbol |= (uint8_t)(1u << segment);
+            symbol &= ~(uint8_t)(1u << segment);
         }
         return symbol;
     };
