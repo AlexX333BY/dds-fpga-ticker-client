@@ -57,7 +57,7 @@ std::vector<std::uint8_t> fpga_sender::transform_text(const std::string &text) c
             { 'd', { generate_seven_segment_symbol({ 1, 2, 3, 4, 6 }) } },
             { 'e', { generate_seven_segment_symbol({ 0, 3, 4, 5, 6 }) } },
             { 'f', { generate_seven_segment_symbol({ 0, 4, 5, 6 }) } },
-            { 'g', { generate_seven_segment_symbol({ 0, 2, 3, 4, 5, 6 }) } },
+            { 'g', { generate_seven_segment_symbol({ 0, 2, 3, 4, 5 }) } },
             { 'h', { generate_seven_segment_symbol({ 1, 2, 4, 5, 6 }) } },
             { 'i', { generate_seven_segment_symbol({ 1, 2 }) } },
             { 'j', { generate_seven_segment_symbol({ 1, 2, 3 }) } },
